@@ -7,8 +7,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from string import Template
-from typing import Any, Iterable, Mapping, MutableMapping, Optional, Sequence
-from collections import Counter
+from typing import Any, Iterable, Mapping, Optional, Sequence
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -411,7 +410,7 @@ class AdvancedCanonicalizer(Canonicalizer):
 
     def _log_optimization_stats(self) -> None:
         """Log optimization statistics."""
-        print(f"Canonicalization Stats:")
+        print("Canonicalization Stats:")
         print(f"  Original tokens: {self._metrics.original_token_count}")
         print(f"  Optimized tokens: {self._metrics.optimized_token_count}")
         print(f"  Tokens saved: {self._metrics.tokens_saved}")
