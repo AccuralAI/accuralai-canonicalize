@@ -25,6 +25,7 @@ dev = [
 [project.urls]
 homepage = "https://accural-ai.web.app/"
 repository = "https://github.com/accuralai/accuralai-canonicalize"
+documentation = "https://accuralai.readthedocs.io/en/latest/packages/accuralai-canonicalize/index.html"
 
 [build-system]
 requires = ["hatchling"]
