@@ -19,8 +19,7 @@ dev = [
 ]
 
 [project.entry-points."accuralai_core.canonicalizers"]
-"standard" = "accuralai_canonicalize.canonicalizer:build_standard_canonicalizer"
-"advanced" = "accuralai_canonicalize.canonicalizer:build_advanced_canonicalizer"
+"standard" = "accuralai_canonicalize.canonicalizer:build_canonicalizer"
 
 [project.urls]
 homepage = "https://accural-ai.web.app/"

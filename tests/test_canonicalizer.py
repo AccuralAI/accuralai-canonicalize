@@ -4,11 +4,9 @@ from accuralai_core.contracts.models import GenerateRequest
 
 from accuralai_canonicalize.canonicalizer import (
     CanonicalizerOptions,
-    AdvancedCanonicalizer,
     StandardCanonicalizer,
     CanonicalizationMetrics,
-    build_standard_canonicalizer,
-    build_advanced_canonicalizer,
+    build_canonicalizer,
     _compress_whitespace,
     _deduplicate_repeated_phrases,
     _optimize_prompt_structure,
@@ -18,7 +16,7 @@ from accuralai_canonicalize.canonicalizer import (
 
 @pytest.mark.anyio("asyncio")
 async def test_advanced_canonicalizer_generates_cache_key_and_normalizes():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             default_tags=["Demo"],
             cache_key_metadata_fields=["topic"],
@@ -39,7 +37,7 @@ async def test_advanced_canonicalizer_generates_cache_key_and_normalizes():
 
 @pytest.mark.anyio("asyncio")
 async def test_factory_uses_plugin_settings():
-    canonicalizer = await build_standard_canonicalizer(
+    canonicalizer = await build_canonicalizer(
         config={"default_tags": ["One", "Two"], "normalize_tags": True}
     )
 
@@ -51,7 +49,7 @@ async def test_factory_uses_plugin_settings():
 
 @pytest.mark.anyio("asyncio")
 async def test_advanced_canonicalizer_with_full_features():
-    canonicalizer = await build_advanced_canonicalizer(
+    canonicalizer = await build_canonicalizer(
         config={
             "enable_deduplication": True,
             "enable_structure_optimization": True,
@@ -77,7 +75,7 @@ async def test_advanced_canonicalizer_with_full_features():
 
 @pytest.mark.anyio("asyncio")
 async def test_whitespace_compression():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(enable_whitespace_compression=True)
     )
 
@@ -91,7 +89,7 @@ async def test_whitespace_compression():
 
 @pytest.mark.anyio("asyncio")
 async def test_deduplication():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             enable_deduplication=True,
             deduplication_min_length=2,  # Use 2 words minimum
@@ -109,7 +107,7 @@ async def test_deduplication():
 
 @pytest.mark.anyio("asyncio")
 async def test_structure_optimization():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             enable_structure_optimization=True,
             track_metrics=True
@@ -128,7 +126,7 @@ async def test_structure_optimization():
 
 @pytest.mark.anyio("asyncio")
 async def test_conversation_history_optimization():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             optimize_conversation_history=True,
             max_history_entries=2,
@@ -156,7 +154,7 @@ async def test_conversation_history_optimization():
 
 @pytest.mark.anyio("asyncio")
 async def test_system_prompt_compression():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(compress_system_prompt=True)
     )
 
@@ -173,7 +171,7 @@ async def test_system_prompt_compression():
 
 @pytest.mark.anyio("asyncio")
 async def test_validation():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             min_prompt_length=5,
             max_prompt_length=100
@@ -196,7 +194,7 @@ async def test_validation():
 
 @pytest.mark.anyio("asyncio")
 async def test_metrics_tracking():
-    canonicalizer = AdvancedCanonicalizer(
+    canonicalizer = StandardCanonicalizer(
         options=CanonicalizerOptions(
             track_metrics=True,
             enable_deduplication=True,

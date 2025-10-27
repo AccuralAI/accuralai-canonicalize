@@ -1,4 +1,4 @@
-"""Advanced canonicalizer plugin for accuralai-core with token optimization."""
+"""Canonicalizer plugin for accuralai-core with token optimization."""
 
 from __future__ import annotations
 
@@ -198,18 +198,17 @@ class CanonicalizationMetrics:
 
 
 class CanonicalizerOptions(BaseModel):
-    """Configuration options for the advanced canonicalizer."""
+    """Configuration options for the canonicalizer."""
 
     # Basic options
     prompt_template: Optional[str] = None
-    prompt_whitespace: bool = True
     normalize_tags: bool = True
     default_tags: list[str] = Field(default_factory=list)
     metadata_defaults: dict[str, Any] = Field(default_factory=dict)
     auto_cache_key: bool = True
     cache_key_metadata_fields: list[str] = Field(default_factory=list)
     
-    # Advanced token optimization options
+    # Token optimization options
     enable_deduplication: bool = True
     deduplication_min_length: int = Field(default=10, ge=2, le=50)
     enable_structure_optimization: bool = True
@@ -235,18 +234,18 @@ class CanonicalizerOptions(BaseModel):
     @property
     def effective_max_history_entries(self) -> int:
         """Get the effective maximum history entries."""
-        return self.max_history_entries or 50  # Reasonable default
+        return self.max_history_entries or 50
 
 
 @dataclass(slots=True)
-class AdvancedCanonicalizer(Canonicalizer):
-    """Advanced canonicalizer with token optimization and semantic caching."""
+class StandardCanonicalizer(Canonicalizer):
+    """Canonicalizer with token optimization and semantic caching."""
 
     options: CanonicalizerOptions = field(default_factory=CanonicalizerOptions)
     _metrics: CanonicalizationMetrics = field(default_factory=CanonicalizationMetrics, init=False)
 
     async def canonicalize(self, request: GenerateRequest) -> GenerateRequest:
-        """Normalize request data with advanced token optimization."""
+        """Normalize request data with token optimization."""
         # Initialize metrics
         if self.options.track_metrics:
             self._metrics = CanonicalizationMetrics()
@@ -257,7 +256,7 @@ class AdvancedCanonicalizer(Canonicalizer):
 
         updated: dict[str, Any] = {}
 
-        # Process prompt with advanced optimization
+        # Process prompt with token optimization
         prompt = await self._optimize_prompt(request.prompt)
         updated["prompt"] = prompt
 
@@ -425,16 +424,12 @@ class AdvancedCanonicalizer(Canonicalizer):
         return self._metrics
 
 
-# Backward compatibility alias
-StandardCanonicalizer = AdvancedCanonicalizer
-
-
-async def build_standard_canonicalizer(
+async def build_canonicalizer(
     *,
     config: PluginSettings | Mapping[str, Any] | None = None,
     **_: Any,
 ) -> Canonicalizer:
-    """Factory entry point for registering the advanced canonicalizer."""
+    """Factory entry point for creating a canonicalizer."""
     options_data: Mapping[str, Any] | None = None
     if isinstance(config, PluginSettings):
         options_data = config.options
@@ -446,39 +441,4 @@ async def build_standard_canonicalizer(
     except ValidationError as error:
         message = f"Invalid canonicalizer options: {error}"
         raise ValueError(message) from error
-    return AdvancedCanonicalizer(options=options)
-
-
-async def build_advanced_canonicalizer(
-    *,
-    config: PluginSettings | Mapping[str, Any] | None = None,
-    **_: Any,
-) -> Canonicalizer:
-    """Factory entry point for the advanced canonicalizer with full features enabled."""
-    options_data: Mapping[str, Any] | None = None
-    if isinstance(config, PluginSettings):
-        options_data = config.options
-    elif isinstance(config, Mapping):
-        options_data = dict(config)
-
-    # Enable all advanced features by default
-    default_options = {
-        "enable_deduplication": True,
-        "enable_structure_optimization": True,
-        "enable_whitespace_compression": True,
-        "use_semantic_cache_keys": False,  # Disabled by default for safety
-        "optimize_conversation_history": True,
-        "compress_system_prompt": True,
-        "track_metrics": True,
-        "log_optimization_stats": False,
-    }
-    
-    if options_data:
-        default_options.update(options_data)
-
-    try:
-        options = CanonicalizerOptions.model_validate(default_options)
-    except ValidationError as error:
-        message = f"Invalid canonicalizer options: {error}"
-        raise ValueError(message) from error
-    return AdvancedCanonicalizer(options=options)
+    return StandardCanonicalizer(options=options)
