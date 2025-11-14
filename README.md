@@ -5,7 +5,7 @@
 ## Features
 
 ### 🚀 Advanced Token Optimization
-- **Intelligent Whitespace Compression**: Preserves structure while eliminating redundant spaces
+- **Whitespace Preservation**: Original whitespace is preserved for better response quality (compression disabled by default)
 - **Phrase Deduplication**: Removes repeated phrases to reduce token count
 - **Structure Optimization**: Normalizes punctuation and formatting for efficiency
 - **Context-Aware Processing**: Optimizes conversation history and system prompts
@@ -52,7 +52,6 @@ Configure the canonicalizer in your `config.toml`:
 plugin = "advanced"  # Use the advanced canonicalizer
 [canonicalizer.options]
 # Basic options
-prompt_whitespace = true
 normalize_tags = true
 auto_cache_key = true
 cache_key_metadata_fields = ["topic", "domain"]
@@ -61,7 +60,7 @@ cache_key_metadata_fields = ["topic", "domain"]
 enable_deduplication = true
 deduplication_min_length = 10
 enable_structure_optimization = true
-enable_whitespace_compression = true
+enable_whitespace_compression = false  # Disabled by default - preserving whitespace improves response quality
 
 # Semantic caching
 use_semantic_cache_keys = true
@@ -115,7 +114,6 @@ print(f"Compression ratio: {metrics.compression_ratio:.2%}")
 
 ### Basic Options
 - `prompt_template`: Template string for prompt formatting
-- `prompt_whitespace`: Enable basic whitespace normalization
 - `normalize_tags`: Normalize and deduplicate tags
 - `default_tags`: Default tags to add to all requests
 - `metadata_defaults`: Default metadata values
@@ -126,7 +124,7 @@ print(f"Compression ratio: {metrics.compression_ratio:.2%}")
 - `enable_deduplication`: Remove repeated phrases (default: true)
 - `deduplication_min_length`: Minimum phrase length for deduplication (default: 10)
 - `enable_structure_optimization`: Optimize punctuation and formatting (default: true)
-- `enable_whitespace_compression`: Intelligent whitespace compression (default: true)
+- `enable_whitespace_compression`: Whitespace compression (default: false - preserving whitespace improves response quality)
 
 ### Semantic Caching
 - `use_semantic_cache_keys`: Use semantic similarity for cache keys (default: false)
@@ -135,7 +133,7 @@ print(f"Compression ratio: {metrics.compression_ratio:.2%}")
 ### Context-Aware Processing
 - `optimize_conversation_history`: Optimize conversation history (default: true)
 - `max_history_entries`: Maximum history entries to keep (default: 50)
-- `compress_system_prompt`: Compress system prompt whitespace (default: true)
+- `compress_system_prompt`: Apply optimizations to system prompt (default: true, but whitespace is preserved)
 
 ### Metrics and Telemetry
 - `track_metrics`: Track optimization metrics (default: true)
@@ -147,10 +145,10 @@ print(f"Compression ratio: {metrics.compression_ratio:.2%}")
 
 ## Optimization Examples
 
-### Whitespace Compression
+### Whitespace Preservation
 ```
 Input:  "  Hello   world    with    multiple    spaces  "
-Output: "Hello world with multiple spaces"
+Output: "  Hello   world    with    multiple    spaces  "  # Whitespace preserved by default
 ```
 
 ### Deduplication
@@ -190,10 +188,10 @@ print(f"Structure optimization applied: {metrics.structure_optimization_applied}
 
 Typical token savings with the advanced canonicalizer:
 
-- **Whitespace Compression**: 5-15% reduction
+- **Whitespace Preservation**: Enabled by default for better response quality
 - **Deduplication**: 10-30% reduction (when applicable)
 - **Structure Optimization**: 3-8% reduction
-- **Combined Optimization**: 15-40% total reduction
+- **Combined Optimization**: 10-35% total reduction (with whitespace preservation)
 
 ## Migration from Standard Canonicalizer
 

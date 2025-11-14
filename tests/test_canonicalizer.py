@@ -28,7 +28,8 @@ async def test_advanced_canonicalizer_generates_cache_key_and_normalizes():
     request = GenerateRequest(prompt="  Hello   World  ", tags=["Test"])
     canonical = await canonicalizer.canonicalize(request)
 
-    assert canonical.prompt == "Hello World"
+    # Whitespace is preserved (not compressed)
+    assert canonical.prompt == "  Hello   World  "
     assert canonical.tags == ["demo", "test"]
     assert canonical.metadata["topic"] == "general"
     assert canonical.cache_key is not None
@@ -66,25 +67,27 @@ async def test_advanced_canonicalizer_with_full_features():
     )
     canonical = await canonicalizer.canonicalize(request)
 
-    # Should compress whitespace and optimize structure
-    assert "  " not in canonical.prompt  # No double spaces
+    # Whitespace is preserved - multiple spaces remain
+    assert "   " in canonical.prompt  # Multiple spaces preserved
     assert canonical.prompt.count("!") <= 2  # Reduced excessive punctuation (allow some remaining)
     assert canonical.cache_key.startswith("sem:")  # Semantic cache key
     assert canonicalizer.metrics.tokens_saved >= 0
 
 
 @pytest.mark.anyio("asyncio")
-async def test_whitespace_compression():
+async def test_whitespace_preservation():
+    """Test that whitespace is preserved by default."""
     canonicalizer = StandardCanonicalizer(
-        options=CanonicalizerOptions(enable_whitespace_compression=True)
+        options=CanonicalizerOptions(enable_whitespace_compression=False)
     )
 
     request = GenerateRequest(prompt="  Multiple    spaces   and\n\n\nline breaks  ")
     canonical = await canonicalizer.canonicalize(request)
 
-    # Should compress whitespace but preserve structure
-    assert "  " not in canonical.prompt  # No double spaces
-    assert "\n\n\n" not in canonical.prompt  # No triple line breaks (should be compressed to double)
+    # Whitespace is preserved - original formatting maintained
+    assert "  " in canonical.prompt  # Double spaces preserved
+    assert "    " in canonical.prompt  # Multiple spaces preserved
+    assert "\n\n\n" in canonical.prompt  # Triple line breaks preserved
 
 
 @pytest.mark.anyio("asyncio")
@@ -117,10 +120,11 @@ async def test_structure_optimization():
     request = GenerateRequest(prompt="Hello!!!   How are you???   Fine...")
     canonical = await canonicalizer.canonicalize(request)
 
-    # Should normalize punctuation
+    # Should normalize punctuation but preserve whitespace
     assert canonical.prompt.count("!") <= 1
     assert canonical.prompt.count("?") <= 1
     assert canonical.prompt.count(".") <= 3
+    assert "   " in canonical.prompt  # Whitespace around punctuation preserved
     assert canonicalizer.metrics.structure_optimization_applied
 
 
@@ -144,12 +148,13 @@ async def test_conversation_history_optimization():
     request = GenerateRequest(prompt="What's next?", history=history)
     canonical = await canonicalizer.canonicalize(request)
 
-    # Should limit history and compress whitespace
+    # Should limit history but preserve whitespace
     assert len(canonical.history) == 2  # Limited to max_history_entries
     for entry in canonical.history:
         for value in entry.values():
             if isinstance(value, str):
-                assert "  " not in value  # No double spaces
+                # Whitespace is preserved in history
+                assert "  " in value  # Multiple spaces preserved
 
 
 @pytest.mark.anyio("asyncio")
@@ -164,9 +169,9 @@ async def test_system_prompt_compression():
     )
     canonical = await canonicalizer.canonicalize(request)
 
-    # Should compress system prompt whitespace
-    assert "  " not in canonical.system_prompt
-    assert canonical.system_prompt.count("!") <= 1
+    # System prompt whitespace is preserved by default
+    assert "  " in canonical.system_prompt  # Multiple spaces preserved
+    assert canonical.system_prompt.count("!") <= 1  # Punctuation normalized
 
 
 @pytest.mark.anyio("asyncio")
@@ -214,17 +219,16 @@ async def test_metrics_tracking():
 
 
 def test_utility_functions():
-    # Test whitespace compression
-    assert _compress_whitespace("  hello   world  ") == "hello world"
-    assert _compress_whitespace("line1\n\nline2") == "line1\n\nline2"
+    # Whitespace compression function exists but is no longer used by default
+    # Note: _compress_whitespace still exists for backward compatibility but is disabled
 
     # Test deduplication
     assert _deduplicate_repeated_phrases("hello world hello world") == "hello world"
     assert _deduplicate_repeated_phrases("short") == "short"  # Too short (less than 4 words)
 
-    # Test structure optimization
+    # Test structure optimization (whitespace removal removed from this function)
     assert _optimize_prompt_structure("Hello!!!") == "Hello!"
-    assert _optimize_prompt_structure('He said "hello"') == 'He said "hello"'
+    assert _optimize_prompt_structure('He said "hello"   with   spaces') == 'He said "hello"   with   spaces'  # Whitespace preserved
 
     # Test key phrase extraction
     phrases = _extract_key_phrases("Hello World Python Programming Language")

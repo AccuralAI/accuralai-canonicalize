@@ -84,8 +84,7 @@ def _optimize_prompt_structure(text: str) -> str:
     text = re.sub(r'["""]', '"', text)
     text = re.sub(r"[''']", "'", text)
     
-    # Remove redundant spaces around punctuation
-    text = re.sub(r'\s+([,.!?;:])', r'\1', text)
+    # Whitespace removal removed - preserving original whitespace for better response quality
     
     return text
 
@@ -152,6 +151,11 @@ def _generate_semantic_cache_key(request: GenerateRequest, *, extra_fields: Sequ
             if isinstance(value, str):
                 semantic_parts.append(f"{field}:{value}")
     
+    # Include tools in semantic key (important for tool availability)
+    if request.tools:
+        tool_names = sorted([t.get("function", {}).get("name") or str(t) for t in request.tools])
+        semantic_parts.append(f"tools:{'|'.join(tool_names)}")
+    
     # Create semantic hash
     semantic_content = '|'.join(sorted(semantic_parts))
     semantic_hash = hashlib.sha256(semantic_content.encode("utf-8")).hexdigest()[:16]
@@ -173,6 +177,7 @@ def _generate_cache_key(request: GenerateRequest, *, extra_fields: Sequence[str]
         "parameters": request.parameters,
         "metadata": {field: request.metadata.get(field) for field in extra_fields},
         "tags": request.tags,
+        "tools": request.tools,  # Include tools in cache key
     }
     digest = hashlib.sha256(_stable_json(payload).encode("utf-8")).hexdigest()
     return f"req:{digest}"
@@ -212,7 +217,7 @@ class CanonicalizerOptions(BaseModel):
     enable_deduplication: bool = True
     deduplication_min_length: int = Field(default=10, ge=2, le=50)
     enable_structure_optimization: bool = True
-    enable_whitespace_compression: bool = True
+    enable_whitespace_compression: bool = False  # Disabled by default - preserving whitespace improves response quality
     
     # Cache key generation options
     use_semantic_cache_keys: bool = False
@@ -320,11 +325,7 @@ class StandardCanonicalizer(Canonicalizer):
 
         original_prompt = prompt
 
-        # Apply whitespace compression
-        if self.options.enable_whitespace_compression:
-            prompt = _compress_whitespace(prompt)
-            if prompt != original_prompt:
-                self._metrics.whitespace_compression_applied = True
+        # Whitespace compression removed - preserving original whitespace for better response quality
 
         # Apply structure optimization
         if self.options.enable_structure_optimization:
@@ -366,9 +367,7 @@ class StandardCanonicalizer(Canonicalizer):
         for entry in history:
             optimized_entry = {}
             for key, value in entry.items():
-                if isinstance(value, str) and self.options.enable_whitespace_compression:
-                    optimized_entry[key] = _compress_whitespace(value)
-                else:
+                # Whitespace compression removed - preserving original whitespace for better response quality
                     optimized_entry[key] = value
             optimized_history.append(optimized_entry)
 
